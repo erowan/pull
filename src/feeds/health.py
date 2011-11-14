@@ -58,6 +58,20 @@ class FoodOutbreaks(Feed):
         Feed.__init__(self, UrlProtocol(FoodFile()), FoodParser())
 
 
+class WhoFiles(FileListCriteria):
+
+    url = "http://www.who.int/csr/don/archive/year/{0}/en/index.html"
+
+    def __init__(self):
+        FileListCriteria.__init__(self)
+
+    def build(self, start, end):
+        files = []
+        for year in range(start.year, end.year+1):
+            files.append((self.url.format(year),
+                          self.cache_location+'{0}.html'.format(year)))
+        return files   
+
 # adapted from https://scraperwiki.com/scrapers/who_outbreaks/edit/
 class WhoParser(Parser):
     
@@ -92,7 +106,7 @@ class WhoParser(Parser):
             html = f.read()
         page = lxml.html.fromstring( html )
         l = []
-        url = Files.url.format(os.path.basename(file_path).rpartition('.')[0])
+        url = WhoFiles.url.format(os.path.basename(file_path).rpartition('.')[0])
         lis = page.cssselect('.auto_archive li')
         for li in lis:
             href = li.cssselect('a')[0]
@@ -117,31 +131,26 @@ class WhoParser(Parser):
                 'disease': disease.title(), 'where':where.title()
             }
             l.append(d)    
-        return l
-            
-class Files(FileListCriteria):
-
-    url = "http://www.who.int/csr/don/archive/year/{0}/en/index.html"
-
-    def __init__(self):
-        FileListCriteria.__init__(self)
-
-    def build(self, start, end):
-        files = []
-        for year in range(start.year, end.year+1):
-            files.append((self.url.format(year),
-                          self.cache_location+'{0}.html'.format(year)))
-        return files   
+        return l            
 
 class WhoOutbreaks(Feed):
 
     def __init__(self):
-        Feed.__init__(self, UrlProtocol(Files()), WhoParser())
+        Feed.__init__(self, UrlProtocol(WhoFiles()), WhoParser())
 
-logging.basicConfig(level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s %(name)s %(threadName)s %(message)s')        
+def main():
+    logging.basicConfig(level=logging.DEBUG,
+      format='%(asctime)s %(levelname)s %(name)s %(message)s')        
+    d = datetime.today()    
+    results = Site(Config).run('feeds.health', start=d, end=d)
+    for feed, feed_result in results.iteritems():
+        print 'feed={0}, count={1}'.format(feed, feed_result['count'])
+        for item in feed_result['obj'].updater.data_items:
+            print item 
+   
+if __name__ == "__main__":
+    main()
 
-d = datetime.today()    
-results = Site(Config).run('feeds.health', start=d, end=d)
-print str(results)
+
+
       

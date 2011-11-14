@@ -3,10 +3,12 @@ Example Config
 """
 
 __doc__="""
-   Config is a dict key'd on feeder name which contains as it's value a
-   dict of key=feed module name, value=feed_class_name."""
+   Config is used by pull.site to dynamically load feeds.
+   """
 Config = {
+    # module name      
     'feeds.health' : {
+        # feed_name : feed_class                
         'who'  : 'WhoOutbreaks',  
         'food' : 'FoodOutbreaks'     
     },
