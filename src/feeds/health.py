@@ -5,11 +5,10 @@ import re
 import urlparse
 import logging
 import os
-from feeds.config import Config
 from pull.site import (
     FileListCriteria,
     Parser,
-    Feed,
+    build_feed,
     UrlProtocol,
     Site
   )
@@ -51,12 +50,6 @@ class FoodFile(FileListCriteria):
     def build(self, start, end):
         return [(FoodFile.url, 
                   self.cache_location+'outbreaks.html')]
-
-class FoodOutbreaks(Feed):
-
-    def __init__(self):
-        Feed.__init__(self, UrlProtocol(FoodFile()), FoodParser())
-
 
 class WhoFiles(FileListCriteria):
 
@@ -133,16 +126,11 @@ class WhoParser(Parser):
             l.append(d)    
         return l            
 
-class WhoOutbreaks(Feed):
-
-    def __init__(self):
-        Feed.__init__(self, UrlProtocol(WhoFiles()), WhoParser())
-
-def main():
-    logging.basicConfig(level=logging.DEBUG,
-      format='%(asctime)s %(levelname)s %(name)s %(message)s')        
+def main():    
     d = datetime.today()    
-    results = Site(Config).run('feeds.health', start=d, end=d)
+    food = build_feed('food', UrlProtocol(FoodFile()), FoodParser())
+    who = build_feed('who', UrlProtocol(WhoFiles()), WhoParser())
+    results = Site('health', [food, who]).run(start=d, end=d)
     for feed, feed_result in results.iteritems():
         print 'feed={0}, count={1}'.format(feed, feed_result['count'])
         for item in feed_result['obj'].updater.data_items:

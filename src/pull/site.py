@@ -221,6 +221,7 @@ class Parser(object):
     def get_logger(self):
         return logging.getLogger(self.name)
 
+
 class Feed(object):
     '''
     A Feed is run based on a date range via the 'go' method. It achieves this
@@ -231,7 +232,7 @@ class Feed(object):
     described above.  
     '''
 
-    def __init__(self, protocol, parser, **kwargs):
+    def __init__(self, name, protocol, parser, **kwargs):
         '''
         Feed ctor.      
         @param protocol: protocol used to fetch files
@@ -242,12 +243,12 @@ class Feed(object):
           'updater' - callable that takes a list of dicts as input
           'expected_series_count' - Number of series expected in Feed     
         '''
+        self.name = name
         self.protocol = protocol
         self.parser = parser
         # set defaults
         self.commence_date = None
         self.expected_series_count = None
-        self.name = self.__class__.__name__
         self.relative_cache_path = self.name
         # overwrite state with user supplied args
         self.__dict__.update(kwargs)  
@@ -331,6 +332,8 @@ class Feed(object):
             self.get_logger().info('Parsing file %s' % file_path)
             yield parser.parse(file_path)
              
+def build_feed(name, protocol, parser, **kwargs):
+    return Feed(name, protocol, parser, **kwargs)
 
 class Site(object):
     '''
@@ -338,37 +341,22 @@ class Site(object):
     configuration contained in config it will run a clients web scrape.
     '''
     
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, name, feeds):
+        self.name = name
+        self.feeds = feeds        
 
-    def run(self, site_name, start, end=None, feeds=None,
-            logLevel=logging.INFO):
+    def run(self, start, end=None, logLevel=logging.INFO):            
         end = end or datetime.date.today()
-        Config = self.config
-        if site_name not in Config:
-            raise AssertionError("site: '%s' is not configured in " \
-                             "the config module" % site_name)
-
-        feeder = Config[site_name]
+       
         logging.basicConfig(level=logLevel,
           format='%(asctime)s %(levelname)s %(name)s %(message)s')
-        # dynamically import feeder module for feed class defintions
-        module = __import__(site_name, globals(), locals(),
-                            feeder.values())
-        feeds = feeds or feeder.keys()
+       
         failures = []
-        self.stats = dict(map(lambda feed: (feed, {}), feeds))
+        self.stats = dict([(x.name, {}) for x in self.feeds])
         site_series_count = 0
-        for feed in feeds:
-            try:
-                if feed not in feeder:
-                    raise AssertionError('feed=%s is not configured in ' \
-                      'the config module for %s' % (feed, site_name))
-                feed_class_name = feeder[feed]
-                # get feed class object from module and create an instance of it
-                feed_class = getattr(module, feed_class_name)
-                feed_obj = feed_class()
-                feed_obj.name = site_name + "." + feed
+        for feed_obj in self.feeds:
+            feed = feed_obj.name
+            try:    
                 feed_obj.get_logger().setLevel(logLevel)
                 feed_obj.parser.get_logger().setLevel(logLevel)
                 count = feed_obj.go(start, end)
@@ -411,11 +399,11 @@ class Site(object):
         if len(failures) > 0:
             err_msg = 'Run site=%s failed for %s feeds %s. Errors: %s'
             error_feeds = self.statistics_for('errors')
-            if len(feeds) == len(failures):
-                raise ErrorForAllFeeds(err_msg % (site_name, 'all',
+            if len(self.feeds) == len(failures):
+                raise ErrorForAllFeeds(err_msg % (self.name, 'all',
                     str(error_feeds[0]), str(error_feeds[1])))
             else:
-                raise ErrorForSomeFeeds(err_msg % (site_name, 'some',
+                raise ErrorForSomeFeeds(err_msg % (self.name, 'some',
                     str(error_feeds[0]), str(error_feeds[1])))
 
         return self.stats
