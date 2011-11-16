@@ -161,7 +161,7 @@ class UrlProtocol(Protocol):
             if response.headers.get('Content-Encoding') == 'gzip':
                 return self.unzip(response.read()), response.headers
             else:
-                return response.read(), response.header                    
+                return response.read(), response.headers                    
 
         except urllib2.HTTPError, e:
             err_msg = 'Could not get file for {0}. Error: {1}'.format(url, e)
