@@ -285,8 +285,7 @@ class Feed(object):
         return logging.getLogger(self.name)
   
     def get_cache_location(self):
-        return os.path.join(self.protocol.criteria.cache_location,
-                            self.relative_cache_path)
+        return self.protocol.criteria.cache_location
 
     def __fetch(self, start, end):
         self.clear_cache()
