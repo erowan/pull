@@ -81,13 +81,16 @@ class Protocol(object):
 
     def fetch(self, input):
         '''
-        Abstract method to fetch files.  Input is typically a list of url
+        Method to fetch files.  Input is typically a list of url
         & cache filename tuples returned from a FileListCriteria instance but
-        alternatively could be a dict returned by a SearchCriteria instance.
+        could be any input suitable for your protocol instance to handle. This class
+        can be used directly to bypass the UrlProtocol step.
         @param input: Protocol specific input type.
         @return: cache file list.
         '''
-        pass
+        return [input]
+
+SkipProtocol = Protocol
 
 class UrlProtocol(Protocol):
     '''
