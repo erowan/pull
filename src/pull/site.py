@@ -124,13 +124,13 @@ class UrlProtocol(Protocol):
         '''
         cache_files = []
         failures = []
-        for url, file in files:
+        for url, f in files:
             try:
                 log.info("Downloading: " + str(url))
                 response, headers = self.fetch_url(url)
                 log.debug('response headers=%s' % str(headers))
-                write_cache_file(response, file)
-                cache_files.append(file)
+                write_cache_file(response, f)
+                cache_files.append(f)
             except Exception, e:
                 # todo: think about passing failures back by setting
                 # site.stats[feed]['errors'] because if len(cache_files) > 0
@@ -219,11 +219,12 @@ class Parser(object):
         Parse the contents of file into a sequence of dicts.
         @param file_path: path to file to parse.
         '''
-        pass
+        return file_path
     
     def get_logger(self):
         return logging.getLogger(self.name)
 
+SkipParser = Parser
 
 class Feed(object):
     '''
@@ -334,7 +335,8 @@ class Feed(object):
             self.get_logger().info('Parsing file %s' % file_path)
             yield parser.parse(file_path)
              
-def build_feed(name, protocol, parser, **kwargs):
+def build_feed(name, protocol, parser=None, **kwargs):
+    parser = parser or SkipParser()
     return Feed(name, protocol, parser, **kwargs)
 
 class Site(object):
