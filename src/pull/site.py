@@ -261,6 +261,8 @@ class Feed(object):
         self.protocol.criteria.cache_location = os.path.join(
           self.protocol.criteria.cache_location, self.relative_cache_path, '')  
 
+        self.updater.cache_location = self.get_cache_location()
+        
     def go(self, start, end):
         '''
         Main function to drive a Feeds download & store.
