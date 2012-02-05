@@ -12,7 +12,7 @@ requires = [
     ]
 
 setup(name='pull',
-      version='0.1',
+      version='0.2',
       description='Web Scraper scaffolding library',
       long_description=README,
       classifiers=[
