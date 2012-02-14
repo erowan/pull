@@ -184,6 +184,10 @@ class UrlProtocol(Protocol):
 
 class Updater(object):
     
+    def __init__(self):
+        # set later in Feed.__init__
+        self.cache_location = None
+    
     def __call__(self, data_items):
         pass
     
