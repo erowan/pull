@@ -115,7 +115,8 @@ class UrlProtocol(Protocol):
         for url, f in files:
             try:
                 log.info("Downloading: " + str(url))
-                response, headers = self.fetch_url(url)
+                response, headers = self.fetch_url(url,
+                                                   headers=self.httpHeaders)
                 log.debug('response headers=%s' % str(headers))
                 write_cache_file(response, f)
                 cache_files.append(f)
@@ -133,8 +134,7 @@ class UrlProtocol(Protocol):
               'Errors: {0}'.format(">>>".join(failures)))
         return cache_files
 
-    def fetch_url(self, url, data=None):
-        from urllib2 import Request
+    def fetch_url(self, url, **request_args):
         try:
             handlers = []
             if self.proxyHandler:
@@ -142,12 +142,7 @@ class UrlProtocol(Protocol):
             handlers.extend([urllib2.HTTPCookieProcessor(self.cj),
                              self.httpLogger])    
             opener = urllib2.build_opener(*handlers)
-            request = None
-            if data:
-                request = Request(url, data=data, headers=self.httpHeaders)
-            else:
-                request = Request(url, headers = self.httpHeaders)
-            response =  opener.open(request)
+            response =  opener.open(urllib2.Request(url, **request_args))
             if response.headers.get('Content-Encoding') == 'gzip':
                 return self.unzip(response.read()), response.headers
             else:
