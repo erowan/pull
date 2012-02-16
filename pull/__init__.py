@@ -21,7 +21,7 @@ def write_cache_file(data, file_path):
     parent_dir = get_parent_dir(file_path)
     if os.path.isfile(parent_dir):
         raise AssertionError('Expected a cache directory here not a regular'
-          ' file %s' % `parent_dir`)
+          ' file %s' % parent_dir)
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
     f = open(file_path, 'wb')
@@ -112,6 +112,9 @@ class UrlProtocol(Protocol):
         '''
         cache_files = []
         failures = []
+        if not files:
+            raise ErrorForAllRequests('No input files to fetch!')
+            
         for url, f in files:
             try:
                 log.info("Downloading: " + str(url))
