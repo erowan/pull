@@ -132,7 +132,7 @@ def main():
     d = date.today()    
     food = build_feed('food', UrlProtocol(FoodFile()), FoodParser())
     who = build_feed('who', UrlProtocol(WhoFiles()), WhoParser())
-    results = go('health', [who], start=date(2011,1,1), end=d)
+    results = go('health', [who, food], start=date(2011,1,1), end=d)
     for feed, feed_result in results.iteritems():
         print 'feed={0}, count={1}'.format(feed, feed_result['count'])
         for item in feed_result['obj'].updater.data_items:
