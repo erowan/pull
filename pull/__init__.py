@@ -9,7 +9,7 @@ import urllib2
 import cookielib
 
 __version__ = 0.2
-log = logging.getLogger(__name__)
+log = logging.getLogger('pull')
 
 def write_cache_file(data, file_path):
     def get_parent_dir(f):
@@ -345,9 +345,6 @@ def go(name, feeds, start, end=None, logLevel=logging.INFO):
     'end' is the datetime  to fetch to
     """          
     end = end or datetime.date.today()
-   
-    logging.basicConfig(level=logLevel,
-      format='%(asctime)s %(levelname)s %(name)s %(message)s')
    
     failures = []
     stats = dict([(x.name, {}) for x in feeds])
