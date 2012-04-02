@@ -278,8 +278,9 @@ class Feed(object):
         '''
         count = 0
         for data_items in self.__parse(files):
-            count += len(data_items)
-            self.updater(data_items)          
+            if data_items:
+                count += len(data_items)
+                self.updater(data_items) 
         return count   
 
     def get_logger(self):
