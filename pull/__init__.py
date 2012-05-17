@@ -86,15 +86,16 @@ class UrlProtocol(Protocol):
     """
 
     def __init__(self, criteria=None, timeout=None,  httpDebugLevel=0,
-                 proxies=None):
+                 proxies=None, user_agent=None):
         Protocol.__init__(self, criteria=criteria)
         self.cj = cookielib.CookieJar()
         self.proxyHandler = urllib2.ProxyHandler(proxies) if proxies else None    
         self.httpLogger = urllib2.HTTPHandler(debuglevel=httpDebugLevel)
         if timeout:
             socket.setdefaulttimeout(timeout)
-        # best to make out we are a brower
-        self.userAgent = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)'
+        # best to make out we are a browser
+        self.userAgent = user_agent or \
+  'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)'
         self.httpHeaders = {
             'User-agent' : self.userAgent,
             'Proxy-Connection' : 'Keep-Alive',
