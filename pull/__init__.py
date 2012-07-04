@@ -7,6 +7,7 @@ import tempfile
 from asyncore import compact_traceback
 import urllib2
 import cookielib
+import codecs 
 
 __version__ = 0.2
 log = logging.getLogger('pull')
@@ -27,7 +28,24 @@ def write_cache_file(data, file_path):
     f = open(file_path, 'wb')
     f.write(data)
     f.close()
-
+    
+def write_cache_file2(data, file_path, encoding='utf-8'):
+    def get_parent_dir(f):
+        parentDir, _ = os.path.split(f)
+        if parentDir == "":
+            raise IOError("no parent directory found for file " + f)
+        return parentDir
+    # if file dir path does not exist create it
+    parent_dir = get_parent_dir(file_path)
+    if os.path.isfile(parent_dir):
+        raise AssertionError('Expected a cache directory here not a regular'
+          ' file %s' % parent_dir)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
+     
+    with codecs.open(file_path, mode='wb', encoding=encoding) as f:    
+        f.write(data)
+ 
 class ErrorForAllFeeds(Exception):
     pass
 
@@ -80,6 +98,47 @@ Use :class:`SkipProtocol` to bypass the Protocol step.
 """
 SkipProtocol = Protocol
 
+class SeleniumProtocol(Protocol):
+    
+    def __init__(self, criteria):
+        Protocol.__init__(self, criteria) 
+    
+    def fetch(self, files):
+        '''
+        fetch urls using selenium by writing url responses to cache_files
+        @param files: list of (url, cache_file) tuples
+        @return: cache_file list
+        '''
+        cache_files = []
+        failures = []
+        if not files:
+            raise ErrorForAllRequests('No input files to fetch!')
+        from selenium.webdriver.chrome import webdriver
+        
+        browser = webdriver.WebDriver()    
+        for url, f in files:
+            try:
+                log.info("Downloading: " + str(url))
+                browser.get(url)
+                response = browser.page_source
+                write_cache_file2(response, f)
+                cache_files.append(f)
+            except Exception, e:
+                error_message = 'Exception: %s, for url: %s' % (e, url)
+                log.warn(error_message)
+           
+        try:
+            browser.stop_client()
+            browser.quit()
+        except Exception, e: 
+            log.exception(e)
+       
+        if len(cache_files) == 0:
+            # note only raising an exception if all file retrievals failed
+            raise ErrorForAllRequests(u'URL Fetch failed for all requests. '\
+              'Errors: {0}'.format(">>>".join(failures)))
+        return cache_files
+    
 class UrlProtocol(Protocol):
     """
     :class:`UrlProtocol` is used for url GET fetching.
@@ -122,7 +181,7 @@ class UrlProtocol(Protocol):
                 response, headers = self.fetch_url(url,
                                                    headers=self.httpHeaders)
                 log.debug('response headers=%s' % str(headers))
-                write_cache_file(response, f)
+                write_cache_file2(response, f)
                 cache_files.append(f)
             except Exception, e:
                 # todo: think about passing failures back by setting
@@ -134,7 +193,7 @@ class UrlProtocol(Protocol):
 
         if len(cache_files) == 0:
             # note only raising an exception if all file retrievals failed
-            raise ErrorForAllRequests('URL Fetch failed for all requests. '\
+            raise ErrorForAllRequests(u'URL Fetch failed for all requests. '\
               'Errors: {0}'.format(">>>".join(failures)))
         return cache_files
 

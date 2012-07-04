@@ -6,6 +6,7 @@ import lxml.html
 import re
 import urlparse
 import os
+import logging
 from pull import (
     FileListCriteria,
     Parser,
@@ -13,7 +14,6 @@ from pull import (
     UrlProtocol,
     go
   )
-
 
 # adapted from https://scraperwiki.com/scrapers/cdc_foodborne_outbreaks/edit/
 class FoodParser(Parser):
@@ -130,8 +130,11 @@ class WhoParser(Parser):
 
 def main():    
     d = date.today()    
-    food = build_feed('food', UrlProtocol(FoodFile()), FoodParser())
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(levelname)s %(name)s %(message)s')
+    food = build_feed('food', UrlProtocol(FoodFile(), httpDebugLevel=9), FoodParser())
     who = build_feed('who', UrlProtocol(WhoFiles()), WhoParser())
+    who.get_logger().setLevel(logging.DEBUG)
     results = go('health', [who, food], start=date(2011,1,1), end=d)
     for feed, feed_result in results.iteritems():
         print 'feed={0}, count={1}'.format(feed, feed_result['count'])
