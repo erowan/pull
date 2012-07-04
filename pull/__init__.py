@@ -181,7 +181,7 @@ class UrlProtocol(Protocol):
                 response, headers = self.fetch_url(url,
                                                    headers=self.httpHeaders)
                 log.debug('response headers=%s' % str(headers))
-                write_cache_file2(response, f)
+                write_cache_file(response, f)
                 cache_files.append(f)
             except Exception, e:
                 # todo: think about passing failures back by setting
