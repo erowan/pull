@@ -8,6 +8,11 @@ from asyncore import compact_traceback
 import urllib2
 import cookielib
 import codecs 
+try:
+    from selenium.webdriver.chrome import webdriver
+    selenium_installed=True
+except ImportError:
+    selenium_installed=False
 
 __version__ = 0.2
 log = logging.getLogger('pull')
@@ -100,8 +105,13 @@ SkipProtocol = Protocol
 
 class SeleniumProtocol(Protocol):
     
-    def __init__(self, criteria):
-        Protocol.__init__(self, criteria) 
+    def __init__(self, criteria, remote=None):
+        Protocol.__init__(self, criteria)
+        if not selenium_installed:
+            err_msg = 'Note you must install selenium if you want to use SeleniumProtocol'
+            log.error(err_msg) 
+            raise ValueError(err_msg)   
+        self.remote = remote 
     
     def fetch(self, files):
         '''
@@ -113,9 +123,9 @@ class SeleniumProtocol(Protocol):
         failures = []
         if not files:
             raise ErrorForAllRequests('No input files to fetch!')
-        from selenium.webdriver.chrome import webdriver
-        
-        browser = webdriver.WebDriver()    
+        chrome_opts =  webdriver.Options().to_capabilities()       
+        browser = webdriver.RemoteWebDriver(self.remote,
+                        chrome_opts) if self.remote else webdriver.WebDriver()   
         for url, f in files:
             try:
                 log.info("Downloading: " + str(url))
