@@ -10,6 +10,8 @@ import cookielib
 import codecs 
 try:
     from selenium.webdriver.chrome import webdriver
+    import selenium.webdriver.support.ui as ui
+    from selenium.webdriver.support.wait import POLL_FREQUENCY
     selenium_installed=True
 except ImportError:
     selenium_installed=False
@@ -105,13 +107,17 @@ SkipProtocol = Protocol
 
 class SeleniumProtocol(Protocol):
     
-    def __init__(self, criteria, remote=None):
+    def __init__(self, criteria, remote=None, wait_until_cond=None,
+                 timeout=10, poll_frequency=None):
         Protocol.__init__(self, criteria)
         if not selenium_installed:
             err_msg = 'Note you must install selenium if you want to use SeleniumProtocol'
             log.error(err_msg) 
             raise ValueError(err_msg)   
         self.remote = remote 
+        self.wait_until_cond = wait_until_cond
+        self.timeout = timeout
+        self.poll_frequency = poll_frequency or POLL_FREQUENCY
     
     def fetch(self, files):
         '''
@@ -130,6 +136,11 @@ class SeleniumProtocol(Protocol):
             try:
                 log.info("Downloading: " + str(url))
                 browser.get(url)
+                if self.wait_until_cond:
+                    log.debug("wait until page load condition is satisifed ...")
+                    wait = ui.WebDriverWait(browser, self.timeout,
+                                            self.poll_frequency)
+                    wait.until(self.wait_until_cond)
                 response = browser.page_source
                 write_cache_file2(response, f)
                 cache_files.append(f)
