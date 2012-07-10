@@ -9,9 +9,11 @@ import urllib2
 import cookielib
 import codecs 
 try:
+    from selenium.webdriver.remote import webdriver as remote_webdriver
     from selenium.webdriver.chrome import webdriver
     import selenium.webdriver.support.ui as ui
     from selenium.webdriver.support.wait import POLL_FREQUENCY
+    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
     selenium_installed=True
 except ImportError:
     selenium_installed=False
@@ -106,7 +108,11 @@ Use :class:`SkipProtocol` to bypass the Protocol step.
 SkipProtocol = Protocol
 
 class SeleniumProtocol(Protocol):
-    
+    """
+    Use Selenium Browser automation framework to get a page back post js load. 
+    Uses the HtmlUnitDriver if remote is sepecified otherwise a local chrome 
+    driver.          
+    """
     def __init__(self, criteria, remote=None, wait_until_cond=None,
                  timeout=10, poll_frequency=None):
         Protocol.__init__(self, criteria)
@@ -129,9 +135,10 @@ class SeleniumProtocol(Protocol):
         failures = []
         if not files:
             raise ErrorForAllRequests('No input files to fetch!')
-        chrome_opts =  webdriver.Options().to_capabilities()       
-        browser = webdriver.RemoteWebDriver(self.remote,
-                        chrome_opts) if self.remote else webdriver.WebDriver()   
+        browser = remote_webdriver.WebDriver(self.remote,
+            desired_capabilities=DesiredCapabilities.HTMLUNITWITHJS) \
+                if self.remote else webdriver.WebDriver()           
+                        
         for url, f in files:
             try:
                 log.info("Downloading: " + str(url))
