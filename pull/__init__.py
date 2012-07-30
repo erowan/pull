@@ -418,8 +418,14 @@ class Feed(object):
     def __parse(self, cache_files):
         parser = self.parser
         for file_path in cache_files:
-            self.get_logger().info('Parsing file %s' % file_path)
-            yield parser.parse(file_path)
+            try:
+                self.get_logger().info('Parsing file %s' % file_path)
+                yield parser.parse(file_path)
+            except Exception, e:
+                _, t, v, tbinfo = compact_traceback()
+                msg = 'error parsing in {0}:, error={1}, traceback is: ' \
+                     '({2}: {3} {4})'.format(file_path, e, t, v, tbinfo)
+                self.get_logger().warn(msg) 
              
 def build_feed(name, protocol, parser=None, **kwargs):
     parser = parser or SkipParser()
